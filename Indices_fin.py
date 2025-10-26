@@ -28,7 +28,7 @@ def calcular_indices(df, w=10):
 
     # 5. Awesome Oscillator
     A_o = ta.momentum.AwesomeOscillatorIndicator(
-        df['High'].squeeze(), df['Low'].squeeze(), window1=int(np.round(w/2),0), window2=w
+        df['High'].squeeze(), df['Low'].squeeze(), window1=int(np.round(w/2)), window2=w
     )
     df['Ind_A0'] = A_o.awesome_oscillator()
 
@@ -56,8 +56,10 @@ def calcular_indices(df, w=10):
     df['Ind_vr'] = atr_m_short / atr_m_long
 
     # 9. Bollinger Bands
-    boll = ta.volatility.BollingerBands(close=df['Close'].squeeze(), window=w, window_dev=2)
-    df['Ind_boll'] = boll.bollinger_hband()
+    boll = ta.volatility.BollingerBands(close=df['Close'].squeeze(), window=w, window_dev=int(np.round(w/5)))
+    df['Ind_boll_h'] = boll.bollinger_hband()
+    df['Ind_boll_m'] = boll.bollinger_mavg()
+    df['Ind_boll_l'] = boll.bollinger_lband()
 
     # 10. Coeficiente de variación
     rend = np.log(df['Close'].squeeze() / df['Close'].squeeze().shift(1))
@@ -101,10 +103,12 @@ def calcular_indices(df, w=10):
         low=df['Low'].squeeze(),
         close=df['Close'].squeeze(),
         window=w,
-        window_atr=int(np.round(w / 2),0),
+        window_atr=int(np.round(w / 2)),
         original_version=False
     )
-    df['Ind_kc'] = kc.keltner_channel_hband()
+    df['Ind_kc_h'] = kc.keltner_channel_hband()
+    df['Ind_kc_m'] = kc.keltner_channel_mband()
+    df['Ind_kc_l'] = kc.keltner_channel_lband()
 
     # 16. CMO
     high_s = high.rolling(window=w).sum()
