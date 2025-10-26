@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from get_data import get_data
+
 
 def generar_senales(df):
     senales = pd.DataFrame(index=df.index)
