@@ -1,0 +1,135 @@
+import numpy as np
+import pandas as pd
+import ta
+from get_data import get_data
+df = get_data('ORCL')
+
+def calcular_indices(df, w=10):
+    df = df.copy()
+
+    # 1. ROC
+    df['Ind_roc'] = (df['Close'].squeeze() - df['Close'].squeeze().shift(w - 1)) / w
+
+    # 2. RSI
+    rsi_indicador = ta.momentum.RSIIndicator(df['Close'].squeeze(), window=w)
+    df['Ind_rsi'] = rsi_indicador.rsi()
+
+    # 3. Williams %R
+    williamr = ta.momentum.williams_r(
+        close=df['Close'].squeeze(),
+        low=df['Low'].squeeze(),
+        high=df['High'].squeeze(),
+        lbp=w
+    )
+    df['Ind_willr'] = williamr
+
+    # 4. KAMA
+    df['Ind_kama'] = ta.momentum.kama(df['Close'].squeeze(), window=w)
+
+    # 5. Awesome Oscillator
+    A_o = ta.momentum.AwesomeOscillatorIndicator(
+        df['High'].squeeze(), df['Low'].squeeze(), window1=int(np.round(w/2),0), window2=w
+    )
+    df['Ind_A0'] = A_o.awesome_oscillator()
+
+    # 6. CMF
+    Mfm = ((df['Close'].squeeze() - df['Low'].squeeze()) -
+           (df['High'].squeeze() - df['Close'].squeeze())) / (df['High'].squeeze() - df['Low'].squeeze())
+    Mfv = Mfm * df['Volume'].squeeze()
+    df['Ind_cmf'] = Mfv.rolling(w).sum() / df['Volume'].squeeze().rolling(w).sum()
+
+    # 7. Choppiness Index
+    high = df['High'].squeeze()
+    low = df['Low'].squeeze()
+    close = df['Close'].squeeze()
+    tr1 = high - low
+    tr2 = abs(high - close.shift(1))
+    tr3 = abs(low - close.shift(1))
+    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+    atr_sum = tr.rolling(window=w).sum()
+    m = high.rolling(window=w).max() - low.rolling(window=w).min()
+    df['Ind_chop'] = 100 * (np.log10(atr_sum / m) / np.log10(w))
+
+    # 8. Volatility Ratio
+    atr_m_short = tr.rolling(window=w).mean()
+    atr_m_long = tr.rolling(window=w + 10).mean()
+    df['Ind_vr'] = atr_m_short / atr_m_long
+
+    # 9. Bollinger Bands
+    boll = ta.volatility.BollingerBands(close=df['Close'].squeeze(), window=w, window_dev=2)
+    df['Ind_boll'] = boll.bollinger_hband()
+
+    # 10. Coeficiente de variación
+    rend = np.log(df['Close'].squeeze() / df['Close'].squeeze().shift(1))
+    sigma_window = rend.rolling(window=w).std()
+    df['Ind_cdv'] = rend / sigma_window
+
+    # 11. OBV
+    ob = ta.volume.OnBalanceVolumeIndicator(
+        close=df['Close'].squeeze(), volume=df['Volume'].squeeze()
+    )
+    df['Ind_obv'] = ob.on_balance_volume()
+
+    # 12. Ease of Movement
+    eom = ta.volume.EaseOfMovementIndicator(
+        high=df['High'].squeeze(),
+        low=df['Low'].squeeze(),
+        volume=df['Volume'].squeeze(),
+        window=w
+    )
+    df['Ind_eom'] = eom.ease_of_movement()
+
+    # 13. Force Index
+    fi = ta.volume.ForceIndexIndicator(
+        close=df['Close'].squeeze(), volume=df['Volume'].squeeze(), window=w
+    )
+    df['Ind_fi'] = fi.force_index()
+
+    # 14. VWAP
+    vwap = ta.volume.VolumeWeightedAveragePrice(
+        high=df['High'].squeeze(),
+        low=df['Low'].squeeze(),
+        close=df['Close'].squeeze(),
+        volume=df['Volume'].squeeze(),
+        window=w
+    )
+    df['Ind_vwap'] = vwap.volume_weighted_average_price()
+
+    # 15. Keltner Channel
+    kc = ta.volatility.KeltnerChannel(
+        high=df['High'].squeeze(),
+        low=df['Low'].squeeze(),
+        close=df['Close'].squeeze(),
+        window=w,
+        window_atr=int(np.round(w / 2),0),
+        original_version=False
+    )
+    df['Ind_kc'] = kc.keltner_channel_hband()
+
+    # 16. CMO
+    high_s = high.rolling(window=w).sum()
+    low_s = low.rolling(window=w).sum()
+    df['Ind_cmo'] = (high_s - low_s) / (high_s + low_s) * 100
+
+    # 17. MFI
+    df['Ind_mfi'] = ta.volume.money_flow_index(
+        high=df['High'].squeeze(),
+        low=df['Low'].squeeze(),
+        close=df['Close'].squeeze(),
+        volume=df['Volume'].squeeze(),
+        window=w
+    )
+
+    # 18. ADI
+    adi = ta.volume.AccDistIndexIndicator(
+        high=df['High'].squeeze(),
+        low=df['Low'].squeeze(),
+        close=df['Close'].squeeze(),
+        volume=df['Volume'].squeeze()
+    )
+    df['Ind_adi'] = adi.acc_dist_index()
+
+    # 19. Ulcer Index
+    df['Ind_ui'] = ta.volatility.ulcer_index(df['Close'].squeeze(), window=14)
+    df = df.dropna()
+    return df
