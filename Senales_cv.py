@@ -25,6 +25,7 @@ def generar_senales(df):
     vwap = []
     boll = []
     kc = []
+    reg= []
     for i in range (len(df)):
         kama.append(np.where(df['Close'].iloc[i] > df['Ind_kama'].iloc[i], 1, -1))
         vwap.append(np.where(df['Close'].iloc[i] < df['Ind_vwap'].iloc[i], 1, -1))
@@ -38,10 +39,18 @@ def generar_senales(df):
             np.where(df['Close'].iloc[i] > df['Ind_kc_h'].iloc[i],-1,0)
         ))
 
+        if df['Ind_reg'].iloc[i] == 1:
+            reg.append(np.where(df['Close'].iloc[i] < df['sma'].iloc[i], 1, -1))
+        elif df['Ind_reg'].iloc[i] == 2:
+            reg.append(np.where(df['Close'].iloc[i] > df['sma'].iloc[i], 1, -1))
+        else:
+            reg.append(0)
+
     senales['kama'] = kama
     senales['vwap'] = vwap
     senales['boll'] = boll
     senales['kc'] = kc
+    senales['reg'] = reg
 
     # Calcular consenso
     senales['consenso_compra'] = (senales == 1).sum(axis=1) / len(senales.columns)
