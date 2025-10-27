@@ -7,10 +7,10 @@ def generar_senales(df):
 
     # Momentum / Volumen / Volatilidad
     senales['roc'] = np.where(df['Ind_roc'] > 0, 1, -1)
-    senales['rsi'] = np.where(df['Ind_rsi'] < 30, 1, np.where(df['Ind_rsi'] > 70, -1, 0))
-    senales['willr'] = np.where(df['Ind_willr'] < -80, 1, np.where(df['Ind_willr'] > -20, -1, 0))
-    senales['A0'] = np.where(df['Ind_A0'] > 0, 1, -1)
-    senales['cmf'] = np.where(df['Ind_cmf'] > 0, 1, -1)
+    senales['rsi'] = np.where(df['Ind_rsi'] < 20, 1, np.where(df['Ind_rsi'] > 70, -1, 0))
+    senales['willr'] = np.where(df['Ind_willr'] < -85, 1, np.where(df['Ind_willr'] > -20, -1, 0))
+    senales['A0'] = np.where(df['Ind_A0'] > 0.05, 1, -1)
+    senales['cmf'] = np.where(df['Ind_cmf'] > 0.05, 1, -1)
     senales['vr'] = np.where(df['Ind_vr'] > 1, 1, -1)
     senales['mfi'] = np.where(df['Ind_mfi'] < 20, 1, np.where(df['Ind_mfi'] > 80, -1, 0))
     senales['obv'] = np.where(df['Ind_obv'] > df['Ind_obv'].shift(1), 1, -1)
