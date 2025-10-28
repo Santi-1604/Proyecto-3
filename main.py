@@ -57,6 +57,7 @@ def main():
 
   #  print("Proceso completado con éxito.")
 # print(" Resultados:")
+  #  print("   - datos reales:", met_real)
   #  print("   - Métricas MLP:", met_mlp)
   #  print("   - Métricas CNN:", met_cnn)
 
