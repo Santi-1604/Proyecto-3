@@ -1,6 +1,7 @@
 
 import tensorflow as tf
 
+from tensorflow.keras.metrics import F1Score
 import mlflow.tensorflow
 import numpy as np
 from sklearn.utils.class_weight import compute_class_weight
@@ -41,7 +42,21 @@ def modelo_mlp(df_estandar,t_col,epochs,b_s,alph,trf,tef,out_dir,w,ss,consec):
         y=y_train
     )
     class_weights = dict(zip(classes, class_weights_values))
-
+    # Dimensión de salida y pérdidas/activaciones/métrica F1
+    output_dim = len(np.unique(y)) if len(np.unique(y)) > 2 else 1
+    if output_dim > 1:
+        loss = "sparse_categorical_crossentropy"
+        output_activation = "softmax"
+        f1_metric = F1Score(average="macro", num_classes=output_dim, name="f1")
+        # y_* se quedan 1D (sparse targets) en multiclase
+    else:
+        loss = "binary_crossentropy"
+        output_activation = "sigmoid"
+        f1_metric = F1Score(average="micro", threshold=0.5, name="f1")
+        # IMPORTANTE: y_* deben ser 2D (n,1) para F1Score
+        y_train = y_train.reshape(-1, 1)
+        y_val = y_val.reshape(-1, 1)
+        y_test = y_test.reshape(-1, 1)
     # ===================================================
     # 3. Función para construir modelo MLP
     # ===================================================
@@ -61,7 +76,7 @@ def modelo_mlp(df_estandar,t_col,epochs,b_s,alph,trf,tef,out_dir,w,ss,consec):
         model.compile(
             optimizer=params.get("optimizer", "adam"),
             loss=params.get("loss", "binary_crossentropy"),
-            metrics=["accuracy"]
+            metrics=["accuracy",f1_metric]
         )
 
         return model
@@ -79,8 +94,6 @@ def modelo_mlp(df_estandar,t_col,epochs,b_s,alph,trf,tef,out_dir,w,ss,consec):
     # ===================================================
     # 5. Entrenamiento y registro
     # ===================================================
-    output_dim = len(np.unique(y)) if len(np.unique(y)) > 2 else 1
-    loss = "sparse_categorical_crossentropy" if output_dim > 1 else "binary_crossentropy"
     epochs = epochs
     batch_size = b_s
 

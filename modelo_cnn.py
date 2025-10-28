@@ -4,7 +4,7 @@ import tensorflow as tf
 import mlflow.tensorflow
 from sklearn.utils.class_weight import compute_class_weight
 from drift_analysis import run_drift_report
-
+from tensorflow.keras.metrics import F1Score
 def modelo_cnn(df_estandar,t_col,epochs,b_s,alph,trf,tef,out_dir,w,ss,consec):
     # Ajusta el nombre de la columna objetivo si tiene otro nombre
     target_col = t_col
@@ -47,6 +47,23 @@ def modelo_cnn(df_estandar,t_col,epochs,b_s,alph,trf,tef,out_dir,w,ss,consec):
         y=y_train
     )
     class_weights = dict(zip(classes, class_weights_values))
+
+    # Dimensión de salida y pérdidas/activaciones/métrica F1
+    output_dim = len(np.unique(y)) if len(np.unique(y)) > 2 else 1
+    if output_dim > 1:
+        loss = "sparse_categorical_crossentropy"
+        output_activation = "softmax"
+        f1_metric = F1Score(average="macro", num_classes=output_dim, name="f1")
+        # y_* se quedan 1D (sparse targets) en multiclase
+    else:
+        loss = "binary_crossentropy"
+        output_activation = "sigmoid"
+        f1_metric = F1Score(average="micro", threshold=0.5, name="f1")
+        # IMPORTANTE: y_* deben ser 2D (n,1) para F1Score
+        y_train = y_train.reshape(-1, 1)
+        y_val = y_val.reshape(-1, 1)
+        y_test = y_test.reshape(-1, 1)
+
     # ===================================================
     # 4. Función para construir CNN
     # ===================================================
@@ -79,7 +96,7 @@ def modelo_cnn(df_estandar,t_col,epochs,b_s,alph,trf,tef,out_dir,w,ss,consec):
         model.compile(
             optimizer=params.get("optimizer", "adam"),
             loss=loss,
-            metrics=["accuracy"]
+            metrics=["accuracy", f1_metric],
         )
         return model
 
@@ -95,7 +112,7 @@ def modelo_cnn(df_estandar,t_col,epochs,b_s,alph,trf,tef,out_dir,w,ss,consec):
     # ===================================================
     # 6. Entrenamiento y registro
     # ===================================================
-    output_dim = len(np.unique(y))
+
     epochs = epochs
     batch_size = b_s
 
